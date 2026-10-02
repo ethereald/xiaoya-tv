@@ -286,7 +286,12 @@ export function App() {
             {view === 'history' ? '返回影片' : `播放記錄 (${history.length})`}
           </button>
           <button className="header-button" onClick={() => void installApp()}>加入主畫面</button>
-          <a className="download" href="/xiaoya-tv.apk?v=0.6.0" download>下載 Android TV 應用程式</a>
+          <a
+            className="download"
+            href="https://github.com/ethereald/xiaoya-tv/releases/latest/download/xiaoya-tv.apk"
+          >
+            下載 Android TV 應用程式
+          </a>
         </div>
       </header>
 
