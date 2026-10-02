@@ -31,6 +31,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView heading;
     private TextView status;
     private EditText search;
+    private Button previousPage;
     private Button nextPage;
     private Button removeHistory;
     private Button clearHistory;
@@ -120,7 +121,10 @@ public class MainActivity extends AppCompatActivity {
         clearHistory = button("清除全部", view -> confirmClearHistory());
         clearHistory.setVisibility(View.GONE);
         labelRow.addView(clearHistory);
-        nextPage = button("下一頁", view -> loadPage(page + 1, true));
+        previousPage = button("上一頁", view -> loadPage(Math.max(1, page - 1)));
+        previousPage.setVisibility(View.GONE);
+        labelRow.addView(previousPage);
+        nextPage = button("下一頁", view -> loadPage(page + 1));
         nextPage.setVisibility(View.GONE);
         labelRow.addView(nextPage);
         root.addView(labelRow);
@@ -219,22 +223,37 @@ public class MainActivity extends AppCompatActivity {
         categoryAdapter.select(category.id);
         heading.setText(category.name);
         movieAdapter.replace(Collections.emptyList());
-        loadPage(1, false);
+        loadPage(1);
     }
 
-    private void loadPage(int targetPage, boolean append) {
+    private void loadPage(int targetPage) {
         if (selectedCategory.isEmpty()) return;
         status.setText("載入中…");
+        previousPage.setEnabled(false);
         nextPage.setEnabled(false);
         ApiClient.catalog(this, selectedCategory, targetPage, new ApiClient.Callback<List<Models.Movie>>() {
             @Override public void onSuccess(List<Models.Movie> values) {
+                if (values.isEmpty()) {
+                    status.setText("已經是最後一頁");
+                    previousPage.setEnabled(true);
+                    nextPage.setVisibility(View.GONE);
+                    return;
+                }
                 page = targetPage;
-                if (append) movieAdapter.append(values); else movieAdapter.replace(values);
+                movieAdapter.replace(values);
                 status.setText("第 " + page + " 頁 · " + values.size() + " 項");
-                nextPage.setVisibility(values.isEmpty() ? View.GONE : View.VISIBLE);
+                previousPage.setVisibility(page > 1 ? View.VISIBLE : View.GONE);
+                previousPage.setEnabled(true);
+                nextPage.setVisibility(View.VISIBLE);
                 nextPage.setEnabled(true);
+                movieGrid.scrollToPosition(0);
+                focusFirstMovie();
             }
-            @Override public void onError(String message) { nextPage.setEnabled(true); showError("載入失敗：" + message); }
+            @Override public void onError(String message) {
+                previousPage.setEnabled(true);
+                nextPage.setEnabled(true);
+                showError("載入失敗：" + message);
+            }
         });
     }
 
@@ -244,6 +263,7 @@ public class MainActivity extends AppCompatActivity {
         leaveLocalView();
         heading.setText("搜尋：" + query);
         status.setText("搜尋中…");
+        previousPage.setVisibility(View.GONE);
         nextPage.setVisibility(View.GONE);
         movieAdapter.replace(Collections.emptyList());
         ApiClient.search(this, query, new ApiClient.Callback<List<Models.Movie>>() {
@@ -257,6 +277,7 @@ public class MainActivity extends AppCompatActivity {
         historyDeleteMode = false;
         heading.setText(title);
         status.setText(values.size() + " 項");
+        previousPage.setVisibility(View.GONE);
         nextPage.setVisibility(View.GONE);
         boolean isHistory = "播放記錄".equals(title);
         removeHistory.setVisibility(isHistory ? View.VISIBLE : View.GONE);

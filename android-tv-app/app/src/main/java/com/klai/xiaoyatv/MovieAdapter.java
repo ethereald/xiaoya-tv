@@ -24,7 +24,6 @@ final class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.Holder> {
     MovieAdapter(Listener listener) { this.listener = listener; }
 
     void replace(List<Models.Movie> movies) { values.clear(); values.addAll(movies); notifyDataSetChanged(); }
-    void append(List<Models.Movie> movies) { int start = values.size(); values.addAll(movies); notifyItemRangeInserted(start, movies.size()); }
 
     @NonNull @Override public Holder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         Context context = parent.getContext();
