@@ -1,4 +1,4 @@
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import { cors } from 'hono/cors';
 
 import { findPlayableHlsUrl, serveProxiedHlsResource } from './hls.js';
@@ -20,6 +20,15 @@ const recentCrashes: Array<Record<string, unknown> & { receivedAt: string }> = [
 function sourceOrigin(c: { env?: AppEnv['Bindings'] }): string | undefined {
   if (c.env?.SOURCE_ORIGIN) return c.env.SOURCE_ORIGIN;
   return typeof process !== 'undefined' ? process.env.SOURCE_ORIGIN : undefined;
+}
+
+function publicOrigin(c: Context<AppEnv>): string {
+  const requestUrl = new URL(c.req.url);
+  const forwardedProtocol = c.req.header('x-forwarded-proto')?.split(',')[0].trim().toLowerCase();
+  const forwardedHost = c.req.header('x-forwarded-host')?.split(',')[0].trim() || c.req.header('host');
+  if (forwardedProtocol === 'http' || forwardedProtocol === 'https') requestUrl.protocol = `${forwardedProtocol}:`;
+  if (forwardedHost) requestUrl.host = forwardedHost;
+  return requestUrl.origin;
 }
 
 app.use('/api/*', cors({
@@ -81,14 +90,14 @@ app.get('/api/douban', async (c) => {
 });
 
 app.get('/api/search/resources', (c) => c.json([
-  { key: 'xiaoya', api: new URL(c.req.url).origin, name: '小鸭看看' },
+  { key: 'xiaoya', api: publicOrigin(c), name: '小鸭看看' },
 ]));
 
 app.on('GET', ['/api/search', '/api/search/one'], async (c) => {
   try {
     const resource = c.req.query('resourceId');
     if (resource && resource !== 'xiaoya') return c.json({ results: [] });
-    return c.json(await searchOrion(c.req.query('q') || '', new URL(c.req.url).origin, sourceOrigin(c)));
+    return c.json(await searchOrion(c.req.query('q') || '', publicOrigin(c), sourceOrigin(c)));
   } catch (error) {
     return c.json({ error: error instanceof Error ? error.message : String(error), results: [] }, 502);
   }
@@ -127,7 +136,7 @@ app.get('/api/image-proxy', async (c) => {
 app.on(['GET', 'HEAD'], '/api/hls-proxy', (c) => {
   const url = c.req.query('url');
   if (!url) return c.text('Missing stream URL', 400);
-  const proxyBase = `${new URL(c.req.url).origin}/api/hls-proxy`;
+  const proxyBase = `${publicOrigin(c)}/api/hls-proxy`;
   return serveProxiedHlsResource(url, proxyBase, c.req.method, c.req.header('range'));
 });
 
@@ -200,7 +209,7 @@ app.get('/api/playlist.m3u', async (c) => {
     const details = await Promise.allSettled(
       [...unique.entries()].map(async ([id, item]) => ({ item, detail: await getDetail(id, sourceOrigin(c)) })),
     );
-    const base = new URL(c.req.url).origin;
+    const base = publicOrigin(c);
     const lines = ['#EXTM3U'];
     for (const result of details) {
       if (result.status !== 'fulfilled') continue;
@@ -237,7 +246,7 @@ app.on(['GET', 'HEAD'], '/api/relay/:id/:episode/stream.m3u8', async (c) => {
     const candidates = [sources[selectedIndex], ...sources.filter((_source, index) => index !== selectedIndex)]
       .map((source) => source.url);
     const playable = await findPlayableHlsUrl(candidates);
-    const proxyBase = `${new URL(c.req.url).origin}/api/hls-proxy`;
+    const proxyBase = `${publicOrigin(c)}/api/hls-proxy`;
     return serveProxiedHlsResource(playable, proxyBase, c.req.method, c.req.header('range'), true);
   } catch (error) {
     return c.text(error instanceof Error ? error.message : String(error), 502);
