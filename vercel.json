@@ -1,0 +1,8 @@
+{
+  "buildCommand": "pnpm build:web",
+  "outputDirectory": "dist",
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/.*", "dest": "/index.html" }
+  ]
+}

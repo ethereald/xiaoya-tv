@@ -1,0 +1,8 @@
+services:
+  relay:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8787:8787"
+    environment:
+      SOURCE_ORIGIN: https://xiaoyakankan.com

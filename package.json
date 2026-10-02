@@ -1,0 +1,39 @@
+{
+  "name": "xiaoya-tv",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k \"vite\" \"tsx watch src/server/index.ts\"",
+    "dev:web": "vite",
+    "dev:server": "tsx watch src/server/index.ts",
+    "build:web": "vite build",
+    "build": "tsc -b --pretty false && vite build && tsup src/server/index.ts --format esm --platform node --out-dir dist-server",
+    "start": "node dist-server/index.js",
+    "deploy:cloudflare": "pnpm build && wrangler deploy",
+    "test": "vitest run",
+    "typecheck": "tsc -b --pretty false"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.19.2",
+    "hls.js": "^1.6.13",
+    "hono": "^4.9.8",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260930.2",
+    "@types/node": "^24.6.0",
+    "@types/react": "^18.3.24",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^4.7.0",
+    "concurrently": "^9.2.1",
+    "tsx": "^4.20.5",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.7",
+    "vitest": "^3.2.4",
+    "wrangler": "^4.40.2"
+  },
+  "packageManager": "pnpm@10.15.0"
+}
