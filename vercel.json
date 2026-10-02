@@ -3,6 +3,9 @@
   "buildCommand": "pnpm build:web",
   "outputDirectory": "dist",
   "rewrites": [
+    { "source": "/api/:path*", "destination": "/api/[...route]" },
+    { "source": "/dav/:path*", "destination": "/api/[...route]" },
+    { "source": "/orion.m3u", "destination": "/api/[...route]" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
